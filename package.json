@@ -1,6 +1,6 @@
 {
-  "name": "@qaecy/rmlmapper-js",
-  "version": "0.5.4",
+  "name": "@comake/rmlmapper-js",
+  "version": "0.5.2",
   "description": "A mapper for the RDF mapping language",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -9,8 +9,7 @@
     "jest": "jest --coverage",
     "lint": "eslint . --cache --ignore-path .gitignore --max-warnings 0",
     "test": "npm run test:ts && npm run jest",
-    "test:ts": "tsc -p test --noEmit",
-    "deploy": "npm publish --access public"
+    "test:ts": "tsc -p test --noEmit"
   },
   "repository": {
     "type": "git",
