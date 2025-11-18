@@ -2,3 +2,4 @@
 .npmrc
 /coverage
 /dist
+.DS_Store
