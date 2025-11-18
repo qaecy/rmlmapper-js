@@ -51,7 +51,7 @@ export abstract class SourceParser<T> {
   public getData(index: number, selector: string, datatype?: string): any[] {
     let values = this.getRawData(index, selector, datatype);
     if (this.ignoreEmptyStrings) {
-      values = values.filter((value: string): boolean => value.trim() !== '');
+      values = values.filter((value: any): boolean => typeof value !== 'string' || value.trim() !== '');
     }
     if (this.ignoreValues) {
       values = values.filter((value: string): boolean => !this.ignoreValues!.includes(value));
