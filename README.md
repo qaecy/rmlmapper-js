@@ -2,19 +2,17 @@
 
 This library is a javascript implementation of a mapper for the [RDF Mapping Language (RML)](http://rml.io/spec.html).
 
-As of now, this library is almost an exact copy of an old javascript RML mapper, [RocketRML](https://github.com/semantifyit/RocketRML). RocketRML is not actively maintained aside from occasional bug fixes and could benefit from improvements to code quality and the addition of typesafety (eg. via Typescript). To that effect, we are planning lots of refactoring and/or a complete rewrite of this library.
-
-The major difference between this library and RocketRML is a change to make it browser compatible. This includes the removal of the dependency on Node.js native modules like `fs` and `path`.
+The library is a Fork of [@comake/rmlmapper-js](https://github.com/comake/rmlmapper-js) and fixes some small bugs here and there.
 
 ## Installation
 
 Via npm or yarn:
 
 ```shell
-npm install @comake/rmlmapper-js
+npm install @qaecy/rmlmapper-js
 ```
 ```shell
-yarn add @comake/rmlmapper-js
+yarn add @qaecy/rmlmapper-js
 ```
 
 ## Support
