@@ -1,29 +1,70 @@
 import { v4 as uuid } from 'uuid';
+import { vi, describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { predefinedFunctions } from '../../src/PredefinedFunctions';
 import { GREL, IDLAB } from '../../src/util/Vocabulary';
 
-jest.mock('uuid', (): any => ({ v4: jest.fn().mockReturnValue('abc123') }));
+vi.mock('uuid', (): object => ({ v4: vi.fn().mockReturnValue('abc123') }));
 
 describe('mapper functions', (): void => {
+  describe('grel:string_match', (): void => {
+    it('returns true if the string matches the pattern.', async(): Promise<void> => {
+      const args = { [GREL.valueParameter]: 'hello world', [GREL.p_string_find]: 'hello.*' };
+      expect(predefinedFunctions[GREL.string_match](args)).toBe(true);
+    });
+    it('returns false if the string does not match the pattern.', async(): Promise<void> => {
+      const args = { [GREL.valueParameter]: 'hello world', [GREL.p_string_find]: '^world' };
+      expect(predefinedFunctions[GREL.string_match](args)).toBe(false);
+    });
+    it('returns false if the pattern is invalid.', async(): Promise<void> => {
+      const args = { [GREL.valueParameter]: 'hello world', [GREL.p_string_find]: '[invalid' };
+      expect(predefinedFunctions[GREL.string_match](args)).toBe(false);
+    });
+    it('returns false if the value or pattern is not a string.', async(): Promise<void> => {
+      const args = { [GREL.valueParameter]: 123, [GREL.p_string_find]: '.*' };
+      expect(predefinedFunctions[GREL.string_match](args)).toBe(false);
+    });
+    it('returns true if the value is an empty string.', async(): Promise<void> => {
+      const args = { [GREL.valueParameter]: '', [GREL.p_string_find]: '.*' };
+      expect(predefinedFunctions[GREL.string_match](args)).toBe(true);
+    });
+    it('returns true if the value is an empty string 2.', async(): Promise<void> => {
+      const args = { [GREL.valueParameter]: '', [GREL.p_string_find]: '' };
+      expect(predefinedFunctions[GREL.string_match](args)).toBe(true);
+    });
+    it('returns true if the value is null.', async(): Promise<void> => {
+      const args = { [GREL.valueParameter]: null, [GREL.p_string_find]: '' };
+      expect(predefinedFunctions[GREL.string_match](args)).toBe(true);
+    });
+  });
+  describe('grel:string_contains', (): void => {
+    it('returns true if the string includes the substring.', async(): Promise<void> => {
+      const args = { [GREL.valueParameter]: 'hello world', [GREL.string_sub]: 'world' };
+      expect(predefinedFunctions[GREL.string_contains](args)).toBe(true);
+    });
+    it('returns false if the string does not include the substring.', async(): Promise<void> => {
+      const args = { [GREL.valueParameter]: 'hello world', [GREL.string_sub]: 'ward' };
+      expect(predefinedFunctions[GREL.string_contains](args)).toBe(false);
+    });
+  });
   describe('grel:array_join', (): void => {
-    it('joins an array with a separator.', (): void => {
+    it('joins an array with a separator.', async(): Promise<void> => {
       const args = [ ',', 'a', 'b', 'c' ] as Record<string | number, any>;
       args[GREL.p_array_a] = args.slice(1);
       args[GREL.p_string_sep] = args[0];
       expect(predefinedFunctions[GREL.array_join](args)).toBe('a,b,c');
     });
-    it('filters out empty arrays before joining.', (): void => {
+    it('filters out empty arrays before joining.', async(): Promise<void> => {
       const args = [ ',', [], 'a', 'b', [], []] as Record<string | number, any>;
       args[GREL.p_array_a] = args.slice(1);
       args[GREL.p_string_sep] = args[0];
       expect(predefinedFunctions[GREL.array_join](args)).toBe('a,b');
     });
-    it('joins an array with no separator if one is not provided.', (): void => {
+    it('joins an array with no separator if one is not provided.', async(): Promise<void> => {
       const args = [ 'a', 'b', 'c' ] as Record<string | number, any>;
       args[GREL.p_array_a] = args;
       expect(predefinedFunctions[GREL.array_join](args)).toBe('abc');
     });
-    it('returns the array if it is a single value.', (): void => {
+    it('returns the array if it is a single value.', async(): Promise<void> => {
       const args = [] as Record<string | number, any>;
       args[GREL.p_array_a] = 'a';
       expect(predefinedFunctions[GREL.array_join](args)).toBe('a');
@@ -31,7 +72,7 @@ describe('mapper functions', (): void => {
   });
 
   describe('grel:controls_if', (): void => {
-    it('returns the any_true value if the bool_b value is the string "true".', (): void => {
+    it('returns the any_true value if the bool_b value is the string "true".', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.controls_if]({
         [GREL.bool_b]: 'true',
         [GREL.any_true]: 'it was true',
@@ -39,7 +80,7 @@ describe('mapper functions', (): void => {
       })).toBe('it was true');
     });
 
-    it('returns the any_true value if the bool_b value is the boolean true.', (): void => {
+    it('returns the any_true value if the bool_b value is the boolean true.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.controls_if]({
         [GREL.bool_b]: true,
         [GREL.any_true]: 'it was true',
@@ -47,7 +88,7 @@ describe('mapper functions', (): void => {
       })).toBe('it was true');
     });
 
-    it('returns the any_false value if the bool_b value is a string not equaling "true".', (): void => {
+    it('returns the any_false value if the bool_b value is a string not equaling "true".', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.controls_if]({
         [GREL.bool_b]: 'example',
         [GREL.any_true]: 'it was true',
@@ -55,7 +96,7 @@ describe('mapper functions', (): void => {
       })).toBe('it was false');
     });
 
-    it('returns the any_false value if the bool_b value the boolean false.', (): void => {
+    it('returns the any_false value if the bool_b value the boolean false.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.controls_if]({
         [GREL.bool_b]: false,
         [GREL.any_true]: 'it was true',
@@ -63,7 +104,7 @@ describe('mapper functions', (): void => {
       })).toBe('it was false');
     });
 
-    it('returns the any_false value if the bool_b value is not a string or boolean.', (): void => {
+    it('returns the any_false value if the bool_b value is not a string or boolean.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.controls_if]({
         [GREL.bool_b]: 1,
         [GREL.any_true]: 'it was true',
@@ -73,7 +114,7 @@ describe('mapper functions', (): void => {
 
     it(`returns null if the any_false value is undefined
       and the bool_b value is not the "true" string or true boolean.`,
-    (): void => {
+    async(): Promise<void> => {
       expect(predefinedFunctions[GREL.controls_if]({
         [GREL.bool_b]: 'example',
         [GREL.any_true]: 'it was true',
@@ -82,21 +123,21 @@ describe('mapper functions', (): void => {
   });
 
   describe('grel:string_endsWith', (): void => {
-    it('returns true if the string_sub parameter ends with the valueParameter.', (): void => {
+    it('returns true if the string_sub parameter ends with the valueParameter.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.string_endsWith]({
         [GREL.string_sub]: 'ample',
         [GREL.valueParameter]: 'example',
       })).toBe(true);
     });
 
-    it('returns false if the string_sub parameter does not end with the valueParameter.', (): void => {
+    it('returns false if the string_sub parameter does not end with the valueParameter.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.string_endsWith]({
         [GREL.string_sub]: 'apple',
         [GREL.valueParameter]: 'example',
       })).toBe(false);
     });
 
-    it('returns false if the string_sub parameter is not a string.', (): void => {
+    it('returns false if the string_sub parameter is not a string.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.string_endsWith]({
         [GREL.string_sub]: 1234,
         [GREL.valueParameter]: 'example',
@@ -107,7 +148,7 @@ describe('mapper functions', (): void => {
   describe('grel:string_replace', (): void => {
     it(`replaces all occurances of the p_string_find parameter with
       the p_string_replace parameter in the valueParameter.`,
-    (): void => {
+    async(): Promise<void> => {
       expect(predefinedFunctions[GREL.string_replace]({
         [GREL.p_string_find]: 'peter',
         [GREL.p_string_replace]: 'beth',
@@ -117,28 +158,28 @@ describe('mapper functions', (): void => {
   });
 
   describe('grel:toUpperCase', (): void => {
-    it('capitalizes all characters in the string.', (): void => {
+    it('capitalizes all characters in the string.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.toUpperCase]([ 'loud' ])).toBe('LOUD');
     });
   });
 
   describe('grel:date_now', (): void => {
-    beforeAll((): void => {
-      jest.useFakeTimers('modern');
-      jest.setSystemTime(new Date('2022-08-12T00:00:00.000Z'));
+    beforeAll(async(): Promise<void> => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2022-08-12T00:00:00.000Z'));
     });
 
-    afterAll((): void => {
-      jest.useRealTimers();
+    afterAll(async(): Promise<void> => {
+      vi.useRealTimers();
     });
 
-    it('returns the current time as an ISO datetime string.', (): void => {
+    it('returns the current time as an ISO datetime string.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.date_now]()).toBe('2022-08-12T00:00:00.000Z');
     });
   });
 
   describe('grel:date_inc', (): void => {
-    it('returns an empty string if the input date is not a string.', (): void => {
+    it('returns an empty string if the input date is not a string.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.date_inc]({
         [GREL.p_date_d]: undefined,
         [GREL.p_dec_n]: 2,
@@ -146,7 +187,7 @@ describe('mapper functions', (): void => {
       })).toBe('');
     });
 
-    it('returns a date with the specified unit added or subtracted.', (): void => {
+    it('returns a date with the specified unit added or subtracted.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.date_inc]({
         [GREL.p_date_d]: '2022-08-12T00:00:00.000Z',
         [GREL.p_dec_n]: 2,
@@ -193,13 +234,13 @@ describe('mapper functions', (): void => {
   });
 
   describe('grel:array_sum', (): void => {
-    it('returns the sum of the arguments.', (): void => {
+    it('returns the sum of the arguments.', async(): Promise<void> => {
       const args = [ 1, 2, 3 ] as Record<string | number, any>;
       args[GREL.p_array_a] = args;
       expect(predefinedFunctions[GREL.array_sum](args)).toBe(6);
     });
 
-    it('returns the p_array_a arg if it is not an array.', (): void => {
+    it('returns the p_array_a arg if it is not an array.', async(): Promise<void> => {
       const args = [ 3 ] as Record<string | number, any>;
       args[GREL.p_array_a] = args[0];
       expect(predefinedFunctions[GREL.array_sum](args)).toBe(3);
@@ -207,13 +248,13 @@ describe('mapper functions', (): void => {
   });
 
   describe('grel:array_product', (): void => {
-    it('returns the product of the arguments.', (): void => {
+    it('returns the product of the arguments.', async(): Promise<void> => {
       const args = [ 4, 2, 3 ] as Record<string | number, any>;
       args[GREL.p_array_a] = args;
       expect(predefinedFunctions[GREL.array_product](args)).toBe(24);
     });
 
-    it('returns the p_array_a arg if it is not an array.', (): void => {
+    it('returns the p_array_a arg if it is not an array.', async(): Promise<void> => {
       const args = [ 3 ] as Record<string | number, any>;
       args[GREL.p_array_a] = args[0];
       expect(predefinedFunctions[GREL.array_product](args)).toBe(3);
@@ -221,29 +262,29 @@ describe('mapper functions', (): void => {
   });
 
   describe('grel:boolean_not', (): void => {
-    it('returns false if the bool_b value is the string "true".', (): void => {
+    it('returns false if the bool_b value is the string "true".', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.boolean_not]({ [GREL.bool_b]: 'true' })).toBe(false);
     });
 
-    it('returns false if the bool_b value is the boolean true.', (): void => {
+    it('returns false if the bool_b value is the boolean true.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.boolean_not]({ [GREL.bool_b]: true })).toBe(false);
     });
 
-    it('returns true if the bool_b value is a string not equaling "true".', (): void => {
+    it('returns true if the bool_b value is a string not equaling "true".', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.boolean_not]({ [GREL.bool_b]: 'example' })).toBe(true);
     });
 
-    it('returns true if the bool_b value the boolean false.', (): void => {
+    it('returns true if the bool_b value the boolean false.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.boolean_not]({ [GREL.bool_b]: false })).toBe(true);
     });
 
-    it('returns true if the bool_b value is not a string or boolean.', (): void => {
+    it('returns true if the bool_b value is not a string or boolean.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.boolean_not]({ [GREL.bool_b]: 1 })).toBe(true);
     });
   });
 
   describe('grel:boolean_and', (): void => {
-    it('returns false not all param_rep_b values are true.', (): void => {
+    it('returns false not all param_rep_b values are true.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.boolean_and]([ false ])).toBe(false);
       expect(predefinedFunctions[GREL.boolean_and]([ 'false' ])).toBe(false);
       expect(predefinedFunctions[GREL.boolean_and]([ 'true', true, false ])).toBe(false);
@@ -251,7 +292,7 @@ describe('mapper functions', (): void => {
       expect(predefinedFunctions[GREL.boolean_and]([ 'abc' ])).toBe(false);
     });
 
-    it('returns true if all param_rep_b calues are true.', (): void => {
+    it('returns true if all param_rep_b calues are true.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.boolean_and]([ true ])).toBe(true);
       expect(predefinedFunctions[GREL.boolean_and]([ 'true' ])).toBe(true);
       expect(predefinedFunctions[GREL.boolean_and]([ 'true', true ])).toBe(true);
@@ -259,7 +300,7 @@ describe('mapper functions', (): void => {
   });
 
   describe('grel:boolean_or', (): void => {
-    it('returns false none of the param_rep_b values are true.', (): void => {
+    it('returns false none of the param_rep_b values are true.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.boolean_or]([ false ])).toBe(false);
       expect(predefinedFunctions[GREL.boolean_or]([ 'false' ])).toBe(false);
       expect(predefinedFunctions[GREL.boolean_or]([ false, '123' ])).toBe(false);
@@ -267,7 +308,7 @@ describe('mapper functions', (): void => {
       expect(predefinedFunctions[GREL.boolean_or]([ 1 ])).toBe(false);
     });
 
-    it('returns true if any of the param_rep_b calues are true.', (): void => {
+    it('returns true if any of the param_rep_b calues are true.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.boolean_or]([ true ])).toBe(true);
       expect(predefinedFunctions[GREL.boolean_or]([ true, false ])).toBe(true);
       expect(predefinedFunctions[GREL.boolean_or]([ 'false', 'true' ])).toBe(true);
@@ -278,7 +319,7 @@ describe('mapper functions', (): void => {
   describe('grel:array_get', (): void => {
     it(`returns the element at index equal to the param_int_i_from arg
       if param_int_i_opt_to is not defined.`,
-    (): void => {
+    async(): Promise<void> => {
       expect(predefinedFunctions[GREL.array_get]({
         [GREL.p_array_a]: [ 1, 2, 3 ],
         [GREL.param_int_i_from]: 1,
@@ -287,7 +328,7 @@ describe('mapper functions', (): void => {
 
     it(`returns an array of the elements between indexes equalling the param_int_i_from arg
       and the param_int_i_opt_to arg.`,
-    (): void => {
+    async(): Promise<void> => {
       expect(predefinedFunctions[GREL.array_get]({
         [GREL.p_array_a]: [ 1, 2, 3 ],
         [GREL.param_int_i_from]: 1,
@@ -302,7 +343,7 @@ describe('mapper functions', (): void => {
   });
 
   describe('grel:string_split', (): void => {
-    it('returns the string split into an array on the separator.', (): void => {
+    it('returns the string split into an array on the separator.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.string_split]({
         [GREL.valueParameter]: 'my mother mary',
         [GREL.p_string_sep]: ' ',
@@ -311,7 +352,7 @@ describe('mapper functions', (): void => {
   });
 
   describe('grel:string_toString', (): void => {
-    it('returns the strigified version of the p_any_e param.', (): void => {
+    it('returns the strigified version of the p_any_e param.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.string_toString]({ [GREL.p_any_e]: 123 })).toBe('123');
       expect(predefinedFunctions[GREL.string_toString]({ [GREL.p_any_e]: true })).toBe('true');
       expect(predefinedFunctions[GREL.string_toString]({ [GREL.p_any_e]: 'a string' })).toBe('a string');
@@ -321,27 +362,27 @@ describe('mapper functions', (): void => {
   });
 
   describe('grel:string_toNumber', (): void => {
-    it('returns a float for strings with a decimal point.', (): void => {
+    it('returns a float for strings with a decimal point.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.string_toNumber]({ [GREL.p_any_e]: '33.3' })).toBe(33.3);
       // eslint-disable-next-line unicorn/no-zero-fractions
       expect(predefinedFunctions[GREL.string_toNumber]({ [GREL.p_any_e]: '3.0' })).toBe(3.0);
       expect(predefinedFunctions[GREL.string_toNumber]({ [GREL.p_any_e]: '3.123' })).toBe(3.123);
     });
 
-    it('returns an integer for strings without a decimal point.', (): void => {
+    it('returns an integer for strings without a decimal point.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.string_toNumber]({ [GREL.p_any_e]: '33' })).toBe(33);
       expect(predefinedFunctions[GREL.string_toNumber]({ [GREL.p_any_e]: '3' })).toBe(3);
     });
   });
 
-  describe('grel:string_contains', (): void => {
-    it('returns false if the string does not include the substring.', (): void => {
+  describe('grel:string_contains (duplicate)', (): void => {
+    it('returns false if the string does not include the substring.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.string_contains]({
         [GREL.valueParameter]: 'hello world',
         [GREL.string_sub]: 'ward',
       })).toBe(false);
     });
-    it('returns true if the string includes the substring.', (): void => {
+    it('returns true if the string includes the substring.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.string_contains]({
         [GREL.valueParameter]: 'hello world',
         [GREL.string_sub]: 'world',
@@ -350,21 +391,21 @@ describe('mapper functions', (): void => {
   });
 
   describe('grel:math_max', (): void => {
-    it('returns the maximum of two numbers.', (): void => {
+    it('returns the maximum of two numbers.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.math_max]({ [GREL.p_dec_n]: 3, [GREL.param_n2]: 2 })).toBe(3);
       expect(predefinedFunctions[GREL.math_max]({ [GREL.p_dec_n]: 34, [GREL.param_n2]: 43 })).toBe(43);
     });
   });
 
   describe('grel:math_min', (): void => {
-    it('returns the minimum of two numbers.', (): void => {
+    it('returns the minimum of two numbers.', async(): Promise<void> => {
       expect(predefinedFunctions[GREL.math_min]({ [GREL.p_dec_n]: 3, [GREL.param_n2]: 2 })).toBe(2);
       expect(predefinedFunctions[GREL.math_min]({ [GREL.p_dec_n]: 34, [GREL.param_n2]: 43 })).toBe(34);
     });
   });
 
   describe('idlab:equal', (): void => {
-    it('returns true if the two args are equal.', (): void => {
+    it('returns true if the two args are equal.', async(): Promise<void> => {
       expect(predefinedFunctions[IDLAB.equal]({
         [GREL.valueParameter]: 'abc',
         [GREL.valueParameter2]: 'abc',
@@ -383,7 +424,7 @@ describe('mapper functions', (): void => {
       })).toBe(true);
     });
 
-    it('returns false if the two args are unequal.', (): void => {
+    it('returns false if the two args are unequal.', async(): Promise<void> => {
       expect(predefinedFunctions[IDLAB.equal]({
         [GREL.valueParameter]: 'abc',
         [GREL.valueParameter2]: 'cba',
@@ -400,7 +441,7 @@ describe('mapper functions', (): void => {
   });
 
   describe('idlab:notEqual', (): void => {
-    it('returns false if the two args are equal.', (): void => {
+    it('returns false if the two args are equal.', async(): Promise<void> => {
       expect(predefinedFunctions[IDLAB.notEqual]({
         [GREL.valueParameter]: 'abc',
         [GREL.valueParameter2]: 'abc',
@@ -417,9 +458,17 @@ describe('mapper functions', (): void => {
         [GREL.valueParameter]: true,
         [GREL.valueParameter2]: true,
       })).toBe(false);
+      expect(predefinedFunctions[IDLAB.notEqual]({
+        [GREL.valueParameter]: 'hello',
+        [GREL.valueParameter2]: '',
+      })).toBe(true);
+      expect(predefinedFunctions[IDLAB.notEqual]({
+        [GREL.valueParameter]: 'hello',
+        [GREL.valueParameter2]: null,
+      })).toBe(true);
     });
 
-    it('returns true if the two args are unequal.', (): void => {
+    it('returns true if the two args are unequal.', async(): Promise<void> => {
       expect(predefinedFunctions[IDLAB.notEqual]({
         [GREL.valueParameter]: 'abc',
         [GREL.valueParameter2]: 'cba',
@@ -436,38 +485,38 @@ describe('mapper functions', (): void => {
   });
 
   describe('idlab:getMIMEType', (): void => {
-    it('returns an mime type based on the filename string parameter.', (): void => {
+    it('returns an mime type based on the filename string parameter.', async(): Promise<void> => {
       expect(predefinedFunctions[IDLAB.getMIMEType]({ [IDLAB.str]: 'final_final.jpg' })).toBe('image/jpeg');
     });
   });
 
   describe('idlab:isNull', (): void => {
-    it('returns true if the string parameter is an empty array.', (): void => {
+    it('returns true if the string parameter is an empty array.', async(): Promise<void> => {
       expect(predefinedFunctions[IDLAB.isNull]({ [IDLAB.str]: []})).toBe(true);
     });
 
-    it('returns true if the string parameter is null.', (): void => {
+    it('returns true if the string parameter is null.', async(): Promise<void> => {
       expect(predefinedFunctions[IDLAB.isNull]({ [IDLAB.str]: null })).toBe(true);
     });
 
-    it('returns false if the string parameter is a non empty array.', (): void => {
+    it('returns false if the string parameter is a non empty array.', async(): Promise<void> => {
       expect(predefinedFunctions[IDLAB.isNull]({ [IDLAB.str]: [ 'abc' ]})).toBe(false);
     });
 
-    it('returns false if the string parameter is a non null value.', (): void => {
+    it('returns false if the string parameter is a non null value.', async(): Promise<void> => {
       expect(predefinedFunctions[IDLAB.isNull]({ [IDLAB.str]: 'abc' })).toBe(false);
     });
   });
 
   describe('idlab:random', (): void => {
-    it('returns a random uuid.', (): void => {
+    it('returns a random uuid.', async(): Promise<void> => {
       expect(predefinedFunctions[IDLAB.random]()).toBe('abc123');
       expect(uuid).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('idlab:concat', (): void => {
-    it('returns the str and otherStr args joined by the delimiter.', (): void => {
+    it('returns the str and otherStr args joined by the delimiter.', async(): Promise<void> => {
       expect(predefinedFunctions[IDLAB.concat]({
         [IDLAB.str]: 'hello',
         [IDLAB.otherStr]: 'world',
@@ -475,7 +524,7 @@ describe('mapper functions', (): void => {
       })).toBe('hello world');
     });
 
-    it('returns the str and otherStr args joined if no delimiter is supplied.', (): void => {
+    it('returns the str and otherStr args joined if no delimiter is supplied.', async(): Promise<void> => {
       expect(predefinedFunctions[IDLAB.concat]({
         [IDLAB.str]: 'hello',
         [IDLAB.otherStr]: 'world',
@@ -484,14 +533,14 @@ describe('mapper functions', (): void => {
   });
 
   describe('idlab:listContainsElement', (): void => {
-    it('returns true if the list contains the string.', (): void => {
+    it('returns true if the list contains the string.', async(): Promise<void> => {
       expect(predefinedFunctions[IDLAB.listContainsElement]({
         [IDLAB.str]: 'world',
         [IDLAB.list]: [ 'hello', 'world' ],
       })).toBe(true);
     });
 
-    it('returns false if the list does not contain the string.', (): void => {
+    it('returns false if the list does not contain the string.', async(): Promise<void> => {
       expect(predefinedFunctions[IDLAB.listContainsElement]({
         [IDLAB.str]: 'world',
         [IDLAB.list]: [ 'hello', 'otherworld' ],

@@ -1,7 +1,7 @@
 /* eslint-disable unicorn/expiring-todo-comments */
 /* eslint-disable @typescript-eslint/naming-convention */
 import type { NodeObject } from 'jsonld';
-import tags, { languages } from 'language-tags';
+import tags from 'language-tags';
 import { FunctionExecutor } from './FunctionExecutor';
 import { CsvParser } from './input-parser/CsvParser';
 import { FontoxpathParser } from './input-parser/FontoxpathParser';
@@ -58,12 +58,14 @@ export class MappingProcessor {
   private readonly functionExecutor: FunctionExecutor;
   private readonly mapping: TriplesMap;
   private readonly data: NodeObject[];
+  private readonly options: ProcessOptions;
   private processed = false;
   private returnValue: any;
 
   public constructor(args: MappingProcessorArgs) {
     this.mapping = args.mapping;
     this.data = args.data;
+    this.options = args.options;
     this.sourceParser = this.createSourceParser(args);
     this.functionExecutor = new FunctionExecutor({
       parser: this.sourceParser,
@@ -109,6 +111,7 @@ export class MappingProcessor {
     const subjectMap = this.getSubjectMapFromMapping();
     const classes = this.getNonFunctionClassFromSubjectMap(subjectMap);
     let result = [];
+    const ignoreBlankSubjects = this.getIgnoreBlankSubjects();
     if (RML.reference in subjectMap) {
       result = await this.processMappingWithSubjectMap(
         subjectMap,
@@ -148,14 +151,17 @@ export class MappingProcessor {
       throw new Error('Unsupported subjectmap');
     }
 
-    // TODO: wtf is this...
-    // const firstResult = cutArray(result);
-    // const nonSingleValueArrayResult = Array.isArray(firstResult) && firstResult.length === 1
-    //   ? firstResult[0]
-    //   : firstResult;
+    // Filter out objects with no @id if ignoreBlankSubjects is true
+    if (ignoreBlankSubjects) {
+      result = result.filter((obj): boolean => Boolean(obj['@id']));
+    }
     this.processed = true;
     this.returnValue = result;
     return result;
+  }
+
+  private getIgnoreBlankSubjects(): boolean {
+    return this.options?.includeBlankSubjects !== true;
   }
 
   private getSubjectMapFromMapping(): SubjectMap {

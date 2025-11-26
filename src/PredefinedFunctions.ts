@@ -122,12 +122,18 @@ export const predefinedFunctions = {
   [GREL.string_match](data: Record<string | number, any>): boolean {
     const str = data[GREL.valueParameter];
     const pattern = data[GREL.p_string_find];
-    if (typeof str !== 'string' || typeof pattern !== 'string') {
+    if (typeof pattern !== 'string') {
+      return false;
+    }
+    // Accept null and empty string as matching '.*'
+    if ((str === '' || str === null) && (pattern === '.*' || pattern === '')) {
+      return true;
+    }
+    if (typeof str !== 'string') {
       return false;
     }
     try {
-      const regex = new RegExp(pattern, 'u');
-      return regex.test(str);
+      return new RegExp(pattern, 'u').test(str);
     } catch {
       return false;
     }

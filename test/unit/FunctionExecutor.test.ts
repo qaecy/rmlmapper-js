@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { FunctionExecutor } from '../../src/FunctionExecutor';
 import type { SourceParser } from '../../src/input-parser/SourceParser';
 import type { FunctionValue } from '../../src/util/Types';
@@ -12,9 +13,9 @@ describe('A FunctionExector', (): void => {
 
     beforeEach(async(): Promise<void> => {
       parser = {
-        getData: jest.fn().mockReturnValue('data'),
+        getData: vi.fn().mockReturnValue('data'),
       } as any;
-      randomFunc = jest.fn().mockReturnValue('abc123');
+      randomFunc = vi.fn().mockReturnValue('abc123');
       executor = new FunctionExecutor({
         parser,
         functions: {

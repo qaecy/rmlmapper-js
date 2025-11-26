@@ -124,6 +124,10 @@ export interface ParseOptions {
    */
   ignoreEmptyStrings?: boolean;
   /**
+   * Also add triples for blank subjects (default: false)
+   */
+  includeBlankSubjects?: boolean;
+  /**
    * Ignore values from the input
    */
   ignoreValues?: string[];

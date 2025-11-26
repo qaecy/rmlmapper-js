@@ -146,7 +146,7 @@ export const GREL = createNamespace('http://users.ugent.be/~bjdmeest/function/gr
   'valueParameter2',
 ]);
 
-export const IDLAB = createNamespace('http://example.com/idlab/function/', [
+export const IDLAB = createNamespace('https://w3id.org/imec/idlab/function#', [
   'equal',
   'notEqual',
   'getMIMEType',

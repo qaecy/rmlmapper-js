@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach } from 'vitest';
 import type { SourceParserArgs } from '../../../src/input-parser/SourceParser';
 import { SourceParser } from '../../../src/input-parser/SourceParser';
 

@@ -23,21 +23,22 @@ module.exports = {
     'plugin:import/typescript',
   ],
   rules: {
-    // Below taken from https://github.com/comake/community-server/blob/main/.eslintrc.js
-    // There are valid typing reasons to have one or the other
-    '@typescript-eslint/consistent-type-definitions': 'off',
-    '@typescript-eslint/lines-between-class-members': [ 'error', { exceptAfterSingleLine: true }],
-    '@typescript-eslint/no-empty-interface': 'off',
-    // Breaks with default void in AsyncHandler 2nd generic
-    '@typescript-eslint/no-invalid-void-type': 'off',
-    // Problems with optional parameters
-    '@typescript-eslint/no-unnecessary-condition': 'off',
-    '@typescript-eslint/prefer-optional-chain': 'error',
-    '@typescript-eslint/promise-function-async': [ 'error', { checkArrowFunctions: false } ],
-    '@typescript-eslint/space-before-function-paren': [ 'error', 'never' ],
-    '@typescript-eslint/unbound-method': 'off',
-    '@typescript-eslint/unified-signatures': 'off',
-    // Conflicts with functions from interfaces that sometimes don't require `this`
+     // Below taken from https://github.com/comake/community-server/blob/main/.eslintrc.js
+     // There are valid typing reasons to have one or the other
+     '@typescript-eslint/consistent-type-definitions': 'warn',
+     '@typescript-eslint/lines-between-class-members': [ 'warn', { exceptAfterSingleLine: true }],
+     '@typescript-eslint/no-empty-interface': 'warn',
+     // Breaks with default void in AsyncHandler 2nd generic
+     '@typescript-eslint/no-invalid-void-type': 'warn',
+     // Problems with optional parameters
+     '@typescript-eslint/no-unnecessary-condition': 'warn',
+     '@typescript-eslint/prefer-optional-chain': 'warn',
+     '@typescript-eslint/promise-function-async': [ 'warn', { checkArrowFunctions: false } ],
+     '@typescript-eslint/space-before-function-paren': [ 'warn', 'never' ],
+     '@typescript-eslint/unbound-method': 'warn',
+     '@typescript-eslint/unified-signatures': 'warn',
+     // Conflicts with functions from interfaces that sometimes don't require `this`
+     'array-bracket-spacing': 'off',
     'class-methods-use-this': 'off',
     'comma-dangle': [ 'error', 'always-multiline' ],
     'dot-location': [ 'error', 'property' ],
@@ -141,7 +142,20 @@ module.exports = {
           "^rmlio__rmlmapper-java-wrapper.d.ts$",
         ]
       }
-    ]
+    ],
+    'object-curly-spacing': 'off',
+    'comma-dangle': 'off',
+    'function-paren-newline': 'off',
+    '@typescript-eslint/object-curly-spacing': 'off',
+    'max-len': 'off',
+  },
+  settings: {
+    'import/resolver': {
+      node: {
+        extensions: ['.js', '.ts'],
+        moduleDirectory: ['node_modules', 'src', ''],
+      },
+    },
   },
   overrides: [
     {

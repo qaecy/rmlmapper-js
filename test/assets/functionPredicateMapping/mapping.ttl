@@ -29,17 +29,17 @@ rml:iterator "$".
       rr:termType rr:IRI;
       fnml:functionValue [
         rr:predicateObjectMap [
-          rr:object "http://example.com/idlab/function/concat";
+          rr:object "https://w3id.org/imec/idlab/function#concat";
           rr:predicate fno:executes;
         ];
         rr:predicateObjectMap [
-          rr:predicate "http://example.com/idlab/function/str";
+          rr:predicate "https://w3id.org/imec/idlab/function#str";
           rr:objectMap [
             rr:constant "https://example.com/";
           ];
         ];
         rr:predicateObjectMap [
-          rr:predicate "http://example.com/idlab/function/otherStr";
+          rr:predicate "https://w3id.org/imec/idlab/function#otherStr";
           rr:objectMap [
             fnml:functionValue [
               rr:predicateObjectMap [
