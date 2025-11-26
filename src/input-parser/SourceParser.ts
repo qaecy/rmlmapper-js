@@ -48,13 +48,15 @@ export abstract class SourceParser<T> {
   */
   protected abstract getRawData(index: number, selector: string, datatype?: string): any[];
 
-  public getData(index: number, selector: string, datatype?: string): any[] {
+  public getData(index: number, selector: string, datatype?: string, applyFiltering = true): any[] {
     let values = this.getRawData(index, selector, datatype);
-    if (this.ignoreEmptyStrings) {
-      values = values.filter((value: any): boolean => typeof value !== 'string' || value.trim() !== '');
-    }
-    if (this.ignoreValues) {
-      values = values.filter((value: string): boolean => !this.ignoreValues!.includes(value));
+    if (applyFiltering) {
+      if (this.ignoreEmptyStrings) {
+        values = values.filter((value: any): boolean => typeof value !== 'string' || value.trim() !== '');
+      }
+      if (this.ignoreValues) {
+        values = values.filter((value: string): boolean => !this.ignoreValues!.includes(value));
+      }
     }
     return values;
   }

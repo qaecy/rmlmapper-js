@@ -414,12 +414,13 @@ export async function getValueOfTermMap(
   sourceParser: SourceParser<any>,
   topLevelMappingProcessors: Record<string, MappingProcessor>,
   functionExecutor: FunctionExecutor,
+  applyFiltering = true,
 ): Promise<OrArray<string>> {
   if (RR.constant in termMap) {
     return getConstant<string>(termMap[RR.constant]);
   }
   if (RML.reference in termMap) {
-    return sourceParser.getData(index, getValue<string>(termMap[RML.reference]!));
+    return sourceParser.getData(index, getValue<string>(termMap[RML.reference]!), undefined, applyFiltering);
   }
   if (RR.template in termMap) {
     const template = getValue<string>(termMap[RR.template]!);
@@ -434,6 +435,7 @@ export async function getValueOfTermMap(
       termMap[FNML.functionValue]!,
       index,
       topLevelMappingProcessors,
+      applyFiltering,
     );
   }
   throw new Error('TermMap has neither constant, reference or template');
@@ -445,6 +447,7 @@ async function getPredicateValueFromPredicateMap(
   topLevelMappingProcessors: Record<string, MappingProcessor>,
   sourceParser: SourceParser<any>,
   functionExecutor: FunctionExecutor,
+  applyFiltering = true,
 ): Promise<OrArray<string>> {
   if (Array.isArray(predicateMap)) {
     const predicateArrays = await Promise.all(
@@ -455,6 +458,7 @@ async function getPredicateValueFromPredicateMap(
           sourceParser,
           topLevelMappingProcessors,
           functionExecutor,
+          applyFiltering,
         )),
     );
     return predicateArrays.flat();
@@ -465,6 +469,7 @@ async function getPredicateValueFromPredicateMap(
     sourceParser,
     topLevelMappingProcessors,
     functionExecutor,
+    applyFiltering,
   );
 }
 
@@ -474,6 +479,7 @@ export async function getPredicateValueFromPredicateObjectMap(
   topLevelMappingProcessors: Record<string, MappingProcessor>,
   sourceParser: SourceParser<any>,
   functionExecutor: FunctionExecutor,
+  applyFiltering = true,
 ): Promise<OrArray<string>> {
   const { [RR.predicate]: predicate, [RR.predicateMap]: predicateMap } = mapping;
   if (predicate) {
@@ -486,6 +492,7 @@ export async function getPredicateValueFromPredicateObjectMap(
       topLevelMappingProcessors,
       sourceParser,
       functionExecutor,
+      applyFiltering,
     );
   }
   throw new Error('No predicate specified in PredicateObjectMap');

@@ -47,18 +47,21 @@ export class FunctionExecutor {
     functionValue: FunctionValue,
     index: number,
     topLevelMappingProcessors: Record<string, MappingProcessor>,
+    applyFiltering = true,
   ): Promise<any> {
     const functionName = await this.getFunctionName(
       functionValue[RR.predicateObjectMap],
       index,
       topLevelMappingProcessors,
+      applyFiltering,
     );
     const parameters = await this.getFunctionParameters(
       functionValue[RR.predicateObjectMap],
       index,
       topLevelMappingProcessors,
+      applyFiltering,
     );
-    const params = await this.calculateFunctionParams(parameters, index, topLevelMappingProcessors);
+    const params = await this.calculateFunctionParams(parameters, index, topLevelMappingProcessors, applyFiltering);
     return await this.executeFunction(functionName, params);
   }
 
@@ -66,6 +69,7 @@ export class FunctionExecutor {
     predicateObjectMapField: OrArray<Record<string, any>>,
     index: number,
     topLevelMappingProcessors: Record<string, MappingProcessor>,
+    applyFiltering: boolean,
   ): Promise<string> {
     const predicateObjectMaps = addArray(predicateObjectMapField) as PredicateObjectMap[];
     for (const predicateObjectMap of predicateObjectMaps) {
@@ -75,6 +79,7 @@ export class FunctionExecutor {
         topLevelMappingProcessors,
         this.parser,
         this,
+        applyFiltering,
       );
       if (predicateContainsFnoExecutes(predicate)) {
         const functionName = getFunctionNameFromPredicateObjectMap(predicateObjectMap);
@@ -90,17 +95,29 @@ export class FunctionExecutor {
     predicateObjectMapField: OrArray<PredicateObjectMap>,
     index: number,
     topLevelMappingProcessors: Record<string, MappingProcessor>,
+    applyFiltering: boolean,
   ): Promise<FnoFunctionParameter[]> {
     if (Array.isArray(predicateObjectMapField)) {
-      return await this.getParametersFromPredicateObjectMaps(predicateObjectMapField, index, topLevelMappingProcessors);
+      return await this.getParametersFromPredicateObjectMaps(
+        predicateObjectMapField,
+        index,
+        topLevelMappingProcessors,
+        applyFiltering,
+      );
     }
-    return await this.getParametersFromPredicateObjectMap(predicateObjectMapField, index, topLevelMappingProcessors);
+    return await this.getParametersFromPredicateObjectMap(
+      predicateObjectMapField,
+      index,
+      topLevelMappingProcessors,
+      applyFiltering,
+    );
   }
 
   private async getParametersFromPredicateObjectMaps(
     predicateObjectMaps: PredicateObjectMap[],
     index: number,
     topLevelMappingProcessors: Record<string, MappingProcessor>,
+    applyFiltering: boolean,
   ): Promise<FnoFunctionParameter[]> {
     let parameters: FnoFunctionParameter[] = [];
     for (const predicateObjectMap of predicateObjectMaps) {
@@ -108,6 +125,7 @@ export class FunctionExecutor {
         predicateObjectMap,
         index,
         topLevelMappingProcessors,
+        applyFiltering,
       );
       parameters = [ ...parameters, ...thisMapParameters ];
     }
@@ -118,6 +136,7 @@ export class FunctionExecutor {
     predicateObjectMap: PredicateObjectMap,
     index: number,
     topLevelMappingProcessors: Record<string, MappingProcessor>,
+    applyFiltering: boolean,
   ): Promise<FnoFunctionParameter[]> {
     const predicate = await getPredicateValueFromPredicateObjectMap(
       predicateObjectMap,
@@ -125,6 +144,7 @@ export class FunctionExecutor {
       topLevelMappingProcessors,
       this.parser,
       this,
+      applyFiltering,
     ) as string;
     if (!isFnoExecutesPredicate(predicate)) {
       const { [RR.object]: object, [RR.objectMap]: objectMap } = predicateObjectMap;
@@ -163,12 +183,13 @@ export class FunctionExecutor {
     parameters: FnoFunctionParameter[],
     index: number,
     topLevelMappingProcessors: Record<string, MappingProcessor>,
+    applyFiltering: boolean,
   ): Promise<Record<string | number, any>> {
     const result: Record<string | number, any> = [];
     await Promise.all(
       parameters.map(async(parameter): Promise<void> => {
         // Adds parameters both by their predicates and as array values
-        const value = await this.getParameterValue(parameter, index, topLevelMappingProcessors);
+        const value = await this.getParameterValue(parameter, index, topLevelMappingProcessors, applyFiltering);
         addToObj(result, parameter[RR.predicate]['@id'], value);
         result.push(value);
       }),
@@ -180,18 +201,24 @@ export class FunctionExecutor {
     parameter: FnoFunctionParameter,
     index: number,
     topLevelMappingProcessors: Record<string, MappingProcessor>,
+    applyFiltering: boolean,
   ): Promise<any> {
     if (RR.constant in parameter) {
       return getConstant(parameter[RR.constant]);
     }
     if (RML.reference in parameter) {
-      return this.getValueOfReference(parameter[RML.reference]!, index, parameter[RR.datatype]);
+      return this.getValueOfReference(parameter[RML.reference]!, index, parameter[RR.datatype], applyFiltering);
     }
     if (RR.template in parameter) {
-      return this.resolveTemplate(parameter[RR.template]!, index);
+      return this.resolveTemplate(parameter[RR.template]!, index, applyFiltering);
     }
     if (FNML.functionValue in parameter) {
-      return await this.resolveFunctionValue(parameter[FNML.functionValue]!, index, topLevelMappingProcessors);
+      return await this.resolveFunctionValue(
+        parameter[FNML.functionValue]!,
+        index,
+        topLevelMappingProcessors,
+        applyFiltering,
+      );
     }
     if (RR.parentTriplesMap in parameter) {
       return await this.resolveTriplesMap(parameter[RR.parentTriplesMap]!, topLevelMappingProcessors);
@@ -201,21 +228,23 @@ export class FunctionExecutor {
   private getValueOfReference(
     reference: string | ValueObject<string>,
     index: number,
-    datatype?: string | ReferenceNodeObject,
+    datatype: string | ReferenceNodeObject | undefined,
+    applyFiltering: boolean,
   ): OrArray<any> {
     const data = this.parser.getData(
       index,
       getValue<string>(reference),
       getIdFromNodeObjectIfDefined(datatype),
+      applyFiltering,
     );
     return returnFirstItemInArrayOrValue(data);
   }
 
-  private resolveTemplate(template: string | ValueObject<string>, index: number): string {
+  private resolveTemplate(template: string | ValueObject<string>, index: number, applyFiltering: boolean): string {
     let resolvedTemplate = getValue<string>(template);
     let match = templateRegex.exec(resolvedTemplate);
     while (match) {
-      const variableValue = this.parser.getData(index, match[1]);
+      const variableValue = this.parser.getData(index, match[1], undefined, applyFiltering);
       resolvedTemplate = resolvedTemplate.replace(`{${match[1]}}`, variableValue.toString());
       match = templateRegex.exec(resolvedTemplate);
     }
@@ -226,8 +255,14 @@ export class FunctionExecutor {
     functionValue: FunctionValue,
     index: number,
     topLevelMappingProcessors: Record<string, MappingProcessor>,
+    applyFiltering: boolean,
   ): Promise<any> {
-    const returnValue = await this.executeFunctionFromValue(functionValue, index, topLevelMappingProcessors);
+    const returnValue = await this.executeFunctionFromValue(
+      functionValue,
+      index,
+      topLevelMappingProcessors,
+      applyFiltering,
+    );
     return returnFirstItemInArrayOrValue(returnValue);
   }
 

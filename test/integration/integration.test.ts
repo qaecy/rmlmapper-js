@@ -443,7 +443,7 @@ describe('Parsing', (): void => {
       const resultJSONLD = (await parseTurtle(
         mapFile,
         { 'data.json': JSON.stringify(jsonObj) },
-        { }
+        { ignoreEmptyStrings: true }
       ).catch((err: any): void => {
         console.log(err);
       })) as NodeObject[];

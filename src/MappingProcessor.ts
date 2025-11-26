@@ -65,7 +65,7 @@ export class MappingProcessor {
   public constructor(args: MappingProcessorArgs) {
     this.mapping = args.mapping;
     this.data = args.data;
-    this.options = args.options;
+    this.options = { ...args.options };
     this.sourceParser = this.createSourceParser(args);
     this.functionExecutor = new FunctionExecutor({
       parser: this.sourceParser,
@@ -111,7 +111,6 @@ export class MappingProcessor {
     const subjectMap = this.getSubjectMapFromMapping();
     const classes = this.getNonFunctionClassFromSubjectMap(subjectMap);
     let result = [];
-    const ignoreBlankSubjects = this.getIgnoreBlankSubjects();
     if (RML.reference in subjectMap) {
       result = await this.processMappingWithSubjectMap(
         subjectMap,
@@ -151,17 +150,13 @@ export class MappingProcessor {
       throw new Error('Unsupported subjectmap');
     }
 
-    // Filter out objects with no @id if ignoreBlankSubjects is true
-    if (ignoreBlankSubjects) {
-      result = result.filter((obj): boolean => Boolean(obj['@id']));
+    // Only filter out objects with no @id if includeBlankSubjects is not true
+    if (this.options.includeBlankSubjects !== true) {
+      result = result.filter((obj): boolean => obj['@id'] !== null && obj['@id'] !== '' && obj['@id'] !== undefined);
     }
     this.processed = true;
     this.returnValue = result;
     return result;
-  }
-
-  private getIgnoreBlankSubjects(): boolean {
-    return this.options?.includeBlankSubjects !== true;
   }
 
   private getSubjectMapFromMapping(): SubjectMap {
@@ -325,6 +320,7 @@ export class MappingProcessor {
         subjectMap[FNML.functionValue]!,
         i,
         topLevelMappingProcessors,
+        false,
       );
       obj['@id'] = subjVal;
       if (type) {
