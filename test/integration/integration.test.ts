@@ -1369,7 +1369,7 @@ describe('Parsing', (): void => {
         './test/assets/emptyStrings/mapping.ttl',
         ['./test/assets/emptyStrings/input.json'],
         './test/assets/emptyStrings/out.json',
-        { ignoreEmptyStrings: true }
+        { ignoreEmptyStrings: true, ignoreValues: ['-'] }
       )) as NodeObject[];
 
       const sorted = result.sort((aObj: NodeObject, bObj: NodeObject): number =>
