@@ -14,18 +14,22 @@ function toBoolean(val: string | boolean): boolean {
 
 export const predefinedFunctions = {
   [GREL.array_length](data: Record<string | number, any>): string[] {
-    const arr = Array.isArray(data[GREL.p_array_a]) ? data[GREL.p_array_a] : [ data[GREL.p_array_a] ];
+    const arr = Array.isArray(data[GREL.p_array_a])
+      ? data[GREL.p_array_a]
+      : [ data[GREL.p_array_a] ];
     return arr.length;
   },
   [GREL.array_join](data: Record<string | number, any>): string {
     const separator = data[GREL.p_string_sep] as string | undefined;
     const parts = Array.isArray(data[GREL.p_array_a])
-      ? data[GREL.p_array_a] as string[]
+      ? (data[GREL.p_array_a] as string[])
       : [ data[GREL.p_array_a] as string ];
-    return parts
-      // RML mapper returns empty arrays for undefined values
-      .filter((part): boolean => !(Array.isArray(part) && part.length === 0))
-      .join(separator ?? '');
+    return (
+      parts
+        // RML mapper returns empty arrays for undefined values
+        .filter((part): boolean => !(Array.isArray(part) && part.length === 0))
+        .join(separator ?? '')
+    );
   },
   [GREL.controls_if](data: Record<string | number, any>): any | undefined {
     if (
@@ -78,7 +82,10 @@ export const predefinedFunctions = {
   [GREL.array_sum](data: Record<string | number, any>): number {
     const values = data[GREL.p_array_a];
     if (Array.isArray(values)) {
-      return values.reduce((sum: number, num: string): number => sum + Number.parseFloat(num), 0);
+      return values.reduce(
+        (sum: number, num: string): number => sum + Number.parseFloat(num),
+        0,
+      );
     }
     return Number.parseFloat(values);
   },
@@ -87,7 +94,11 @@ export const predefinedFunctions = {
   [GREL.array_product](data: Record<string | number, any>): number {
     const values = data[GREL.p_array_a];
     if (Array.isArray(values)) {
-      return values.reduce((product: number, num: string): number => product * Number.parseFloat(num), 1);
+      return values.reduce(
+        (product: number, num: string): number =>
+          product * Number.parseFloat(num),
+        1,
+      );
     }
     return Number.parseFloat(values);
   },
@@ -107,6 +118,19 @@ export const predefinedFunctions = {
     }
     const to = Number.parseInt(data[GREL.param_int_i_opt_to], 10);
     return data[GREL.p_array_a].slice(from, to);
+  },
+  [GREL.string_match](data: Record<string | number, any>): boolean {
+    const str = data[GREL.valueParameter];
+    const pattern = data[GREL.p_string_find];
+    if (typeof str !== 'string' || typeof pattern !== 'string') {
+      return false;
+    }
+    try {
+      const regex = new RegExp(pattern, 'u');
+      return regex.test(str);
+    } catch {
+      return false;
+    }
   },
   [GREL.string_split](data: Record<string | number, any>): string[] {
     const value = data[GREL.valueParameter];
@@ -134,10 +158,16 @@ export const predefinedFunctions = {
     return data[GREL.valueParameter].includes(data[GREL.string_sub]);
   },
   [GREL.math_max](data: Record<string | number, any>): number {
-    return Math.max(Number.parseInt(data[GREL.p_dec_n], 10), Number.parseInt(data[GREL.param_n2], 10));
+    return Math.max(
+      Number.parseInt(data[GREL.p_dec_n], 10),
+      Number.parseInt(data[GREL.param_n2], 10),
+    );
   },
   [GREL.math_min](data: Record<string | number, any>): number {
-    return Math.min(Number.parseInt(data[GREL.p_dec_n], 10), Number.parseInt(data[GREL.param_n2], 10));
+    return Math.min(
+      Number.parseInt(data[GREL.p_dec_n], 10),
+      Number.parseInt(data[GREL.param_n2], 10),
+    );
   },
   [GREL.math_ceil](data: Record<string | number, any>): number {
     return Math.ceil(Number.parseInt(data[GREL.p_dec_n], 10));
@@ -159,19 +189,20 @@ export const predefinedFunctions = {
     return uuid();
   },
   [IDLAB.concat](data: Record<string | number, any>): string {
-    return [
-      data[IDLAB.str] as string,
-      data[IDLAB.otherStr] as string,
-    ]
-      .filter((str): boolean => typeof str !== 'object' && (typeof str !== 'string' || str.length > 0))
-      .join(data[IDLAB.delimiter] as string ?? '');
+    return [ data[IDLAB.str] as string, data[IDLAB.otherStr] as string ]
+      .filter(
+        (str): boolean =>
+          typeof str !== 'object' && (typeof str !== 'string' || str.length > 0),
+      )
+      .join((data[IDLAB.delimiter] as string) ?? '');
   },
   [IDLAB.listContainsElement](data: Record<string | number, any>): boolean {
     return data[IDLAB.list].includes(data[IDLAB.str]);
   },
   [IDLAB.trueCondition](data: Record<string | number, any>): any {
     if (
-      (typeof data[IDLAB.strBoolean] === 'string' && data[IDLAB.strBoolean] === 'true') ||
+      (typeof data[IDLAB.strBoolean] === 'string' &&
+        data[IDLAB.strBoolean] === 'true') ||
       (typeof data[IDLAB.strBoolean] === 'boolean' && data[IDLAB.strBoolean])
     ) {
       return data[IDLAB.str];
