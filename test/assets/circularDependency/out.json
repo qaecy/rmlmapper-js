@@ -1,0 +1,25 @@
+[
+  {
+    "@id": "http://example.com/1",
+    "http://schema.org/knows": [
+      {
+        "@id": "http://example.com/2",
+        "http://schema.org/knows": {
+          "@id": "http://example.com/3",
+          "http://schema.org/knows": {
+            "@id": "http://example.com/2"
+          }
+        }
+      },
+      {
+        "@id": "http://example.com/3",
+        "http://schema.org/knows": {
+          "@id": "http://example.com/2",
+          "http://schema.org/knows": {
+            "@id": "http://example.com/3"
+          }
+        }
+      }
+    ]
+  }
+]

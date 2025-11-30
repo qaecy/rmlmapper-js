@@ -29,7 +29,7 @@ export class JsonParser extends SourceParser<JSON> {
   }
 
   protected getRawData(index: number, selector: string, datatype: string): any[] {
-    const sel = selector.replace(/^PATH~/u, '');
+    const sel = selector.replace(/^PATH~/u, '').replace(/\.\*/gu, '[*]');
     const splitter = sel.startsWith('[') ? '' : '.';
     const values = JSONPath({
       path: `${this.paths[index]}${splitter}${sel}`,

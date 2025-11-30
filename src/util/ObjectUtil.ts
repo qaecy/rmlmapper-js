@@ -214,6 +214,46 @@ function isJsonLDReference(obj: any): boolean {
 }
 
 // May create circular data-structure (probably not common in RML though)
+function _jsonLDGraphToObjRecursive(
+  node: NodeObject,
+  graphById: Record<string, NodeObject>,
+  replacedIds: Set<string>,
+  ancestors: Set<string>,
+): NodeObject {
+  const newNode = { ...node };
+  const nodeId = newNode['@id']!;
+  ancestors.add(nodeId);
+
+  for (const key of Object.keys(newNode)) {
+    const fieldValue = newNode[key];
+    if (Array.isArray(fieldValue)) {
+      newNode[key] = fieldValue.map((value): any => {
+        if (isJsonLDReference(value)) {
+          const refId = (value as ReferenceNodeObject)['@id'];
+          if (ancestors.has(refId)) {
+            return value; // Cycle detected, return reference
+          }
+          if (graphById[refId]) {
+            replacedIds.add(refId);
+            return _jsonLDGraphToObjRecursive(graphById[refId], graphById, replacedIds, new Set(ancestors));
+          }
+        }
+        return value;
+      });
+    } else if (isJsonLDReference(fieldValue)) {
+      const refId = (fieldValue as ReferenceNodeObject)['@id'];
+      if (ancestors.has(refId)) {
+        // Cycle detected, do nothing, keep reference
+      } else if (graphById[refId]) {
+        replacedIds.add(refId);
+        newNode[key] = _jsonLDGraphToObjRecursive(graphById[refId], graphById, replacedIds, new Set(ancestors));
+      }
+    }
+  }
+  ancestors.delete(nodeId);
+  return newNode;
+}
+
 export function jsonLDGraphToObj(graph: NodeObject[], deleteReplaced = false): NodeObject[] {
   const graphHasNodeWithoutId = graph.some((node): boolean => !node['@id']);
   if (graphHasNodeWithoutId) {
@@ -225,31 +265,14 @@ export function jsonLDGraphToObj(graph: NodeObject[], deleteReplaced = false): N
     return object;
   }, {});
 
-  const replacedIds = [];
-  for (const id of Object.keys(graphById)) {
-    const node = graphById[id];
-    for (const key of Object.keys(node)) {
-      const fieldValue = node[key];
-      if (Array.isArray(fieldValue)) {
-        fieldValue.forEach((value, index): void => {
-          if (isJsonLDReference(value) && (value as ReferenceNodeObject)['@id'] in graphById) {
-            replacedIds.push((value as ReferenceNodeObject)['@id']);
-            (graphById[id][key] as NodeObject[])[index] = graphById[(value as ReferenceNodeObject)['@id']];
-          }
-        });
-      } else if (isJsonLDReference(fieldValue) && (fieldValue as ReferenceNodeObject)['@id'] in graphById) {
-        replacedIds.push((fieldValue as ReferenceNodeObject)['@id']);
-        graphById[id][key] = graphById[(fieldValue as ReferenceNodeObject)['@id']];
-      }
-    }
-  }
+  const replacedIds = new Set<string>();
+
+  const result = graph.map(node => _jsonLDGraphToObjRecursive(node, graphById, replacedIds, new Set()));
+
   if (deleteReplaced) {
-    for (const deleteId of replacedIds) {
-      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-      delete graphById[deleteId];
-    }
+    return result.filter(node => !replacedIds.has(node['@id']!));
   }
-  return Object.values(graphById);
+  return result;
 }
 
 export function replaceReferences(graph: NodeObject[]): NodeObject[] {
@@ -259,7 +282,7 @@ export function replaceReferences(graph: NodeObject[]): NodeObject[] {
     return JSON.parse(JSON.stringify(connectedGraph));
   } catch {
     // eslint-disable-next-line no-console
-    console.error('Could not replace, circular dependencies when replacing nodes');
+    console.warn('Could not replace, circular dependencies when replacing nodes. Returning flat structure.');
     return graph;
   }
 }

@@ -1583,6 +1583,16 @@ describe('Parsing', (): void => {
       )) as NodeObject[];
       assert.equal(result[0]['http://example.com/value'], 6);
     });
+
+    it('Circular dependency test.', async (): Promise<void> => {
+      const mapFile = await fs.readFile('./test/assets/circularDependency/mapping.ttl', 'utf8');
+      const inputFiles = {
+        'input': await fs.readFile('./test/assets/circularDependency/input.json', 'utf8'),
+      };
+      const result = await parseTurtle(mapFile, inputFiles, { replace: true });
+      const expected = JSON.parse(await fs.readFile('./test/assets/circularDependency/out.json', 'utf8'));
+      assert.deepEqual(result, expected);
+    });
   });
 
   describe('with jsonld mappings', (): void => {
